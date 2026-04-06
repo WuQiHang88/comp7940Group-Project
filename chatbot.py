@@ -43,7 +43,7 @@ You can use these commands:
 """
     await update.message.reply_text(welcome_text)
 
-    # 重置提醒
+
     chat_id = update.effective_chat.id
     if 'reminder_task' in context.user_data:
         context.user_data['reminder_task'].cancel()
@@ -71,14 +71,14 @@ Commands:
     await update.message.reply_text(help_text)
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # 重置提醒
+
     chat_id = update.effective_chat.id
     if 'reminder_task' in context.user_data:
         context.user_data['reminder_task'].cancel()
     task = asyncio.create_task(send_reminder_after_delay(context.bot, chat_id, 1))
     context.user_data['reminder_task'] = task
 
-    # 原有逻辑
+ 
     thinking_msg = await update.message.reply_text("thinking...")
     user_text = update.message.text.strip()
     user_id = str(update.effective_user.id)
