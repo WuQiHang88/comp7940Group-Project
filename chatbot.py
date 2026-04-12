@@ -9,9 +9,10 @@ from telegram.ext import (
 import configparser
 import logging
 from ChatGPT_HKBU import ChatGPT
-from DBUtil import save_chat_history
+from DBUtil import save_chat_history, get_recent_chat_history
 import pymongo
 import asyncio
+import datetime
 
 
 gpt = None
@@ -40,9 +41,9 @@ If you ever feel overwhelmed, I will gently encourage you to seek help and stay 
 You can use these commands:
 /start - Restart & read my role again
 /help  - See examples of how to talk to me
+/history - View your recent mood summary  
 """
     await update.message.reply_text(welcome_text)
-
 
     chat_id = update.effective_chat.id
     if 'reminder_task' in context.user_data:
@@ -67,18 +68,54 @@ If you ever talk about self-harm or suicide, I will gently ask you to reach out 
 Commands:
 /start - See my role introduction
 /help  - Show this help message
+/history - View your recent mood summary
 """
     await update.message.reply_text(help_text)
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+   
+    loading_msg = await update.message.reply_text("🔍 I’m preparing your recent mood summary...")
 
+    user_id = str(update.effective_user.id)
+    records = get_recent_chat_history(config, user_id, 3)
+
+    if not records:
+        await loading_msg.delete()
+        await update.message.reply_text("You don’t have any chat history yet~")
+        return
+
+    history_text = ""
+    for idx, record in enumerate(records):
+      
+        q = record.get("user_message", "")
+        a = record.get("bot_response", "")
+        history_text += f"\n=== Chat {idx+1} ===\nYou: {q}\nBot: {a}\n"
+
+    prompt = f"""
+You are a gentle emotional support companion.
+Please give a short, warm summary of the user's mood based on the recent 3 chats.
+Keep it soft, understanding, and encouraging.
+Do NOT use bullet points.
+Use simple English.
+
+Chat History:
+{history_text}
+
+Summary:
+"""
+
+    summary = gpt.submit(prompt)
+
+    await loading_msg.delete()
+    await update.message.reply_text(f"✨ Your Recent Mood Summary ✨\n\n{summary}")
+
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if 'reminder_task' in context.user_data:
         context.user_data['reminder_task'].cancel()
     task = asyncio.create_task(send_reminder_after_delay(context.bot, chat_id, 1))
     context.user_data['reminder_task'] = task
 
- 
     thinking_msg = await update.message.reply_text("thinking...")
     user_text = update.message.text.strip()
     user_id = str(update.effective_user.id)
@@ -111,6 +148,7 @@ def main():
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("history", history_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     application.run_polling()
