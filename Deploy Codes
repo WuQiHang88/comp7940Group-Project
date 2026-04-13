@@ -1,5 +1,5 @@
 # 1. 登录服务器
-ssh -i "keypair_chatbot.pem" ec2-user@43.199.64.217
+ssh -i "keypair_chatbot.pem" ec2-user@动态分配ip
 
 # 2. 进入项目目录（代码已经在这里）
 cd comp7940Group-Project
