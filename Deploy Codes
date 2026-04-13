@@ -1,11 +1,11 @@
-# 1. 登录服务器
-ssh -i "keypair_chatbot.pem" ec2-user@动态分配ip
+# 1. login in
+ssh -i "keypair_chatbot.pem" ec2-user@dynamic allocate ip
 
-# 2. 进入项目目录（代码已经在这里）
+# 2. access in
 cd comp7940Group-Project
 
-# 3. 重启机器人（让新代码生效）
+# 3. reset
 sudo docker restart emotion-bot
 
-# 4. 查看是否运行成功
+# 4. verify
 sudo docker logs emotion-bot
